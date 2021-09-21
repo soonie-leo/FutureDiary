@@ -4,7 +4,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 
-import { IAmountInfo } from './Interface';
+import { IAssetInfo, ITargetInfo } from './Interface';
 import Counter from './Counter';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -32,17 +32,18 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 interface Props {
-  amountInfo: IAmountInfo;
+  assetInfo: IAssetInfo;
+  targetInfo: ITargetInfo;
 }
 
-const AmountInfo: React.FC<Props> = ({ amountInfo }: Props) => {
+const AmountInfo: React.FC<Props> = ({ assetInfo, targetInfo }: Props) => {
   const classes = useStyles();
 
   return (
     <Box display="flex" mt={2}>
       <Box>
         <Typography>{'현재 순자산'}</Typography>
-        <Counter target={amountInfo.currentNetAssets} textClass={classes.primaryText} />
+        <Counter target={assetInfo.netAsset} textClass={classes.primaryText} />
         <Box display="flex">
           <Typography classes={{ root: classes.subText }}>
             <Box display="inline" mr={0.3}>
@@ -55,15 +56,15 @@ const AmountInfo: React.FC<Props> = ({ amountInfo }: Props) => {
       </Box>
       <Box ml={6}>
         <Typography>{'월소비 목표'}</Typography>
-        <Counter target={amountInfo.monthlyTargetAmount} textClass={classes.secondaryText} />
+        <Counter target={targetInfo.monthlyConsumption} textClass={classes.secondaryText} />
       </Box>
       <Box ml={6}>
-        <Typography>{'월평균 수입'}</Typography>
-        <Counter target={amountInfo.averageMonthlyIncome} textClass={classes.primaryText} />
+        <Typography>{'월수입 목표'}</Typography>
+        <Counter target={targetInfo.monthlyIncome} textClass={classes.primaryText} />
       </Box>
       <Box ml={6}>
         <Typography>{'2021년 순자산 목표'}</Typography>
-        <Counter target={amountInfo.annualTargetAmount} textClass={classes.secondaryText} />
+        <Counter target={targetInfo.annualAsset} textClass={classes.secondaryText} />
       </Box>
     </Box>
   );

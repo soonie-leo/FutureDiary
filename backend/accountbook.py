@@ -118,6 +118,7 @@ def delete(db, id):
         'success': True,
         'message': 'OK'
     }
+    
 
 def update(db, id, date, content, income, expense, category, memo):
     try:

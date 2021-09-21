@@ -5,6 +5,7 @@ from db import db
 
 import accountbook
 import asset
+import target
 
 # 현재있는 파일의 디렉토리 절대경로
 basdir = os.path.abspath(os.path.dirname(__file__))
@@ -88,4 +89,32 @@ def updateAsset(id):
     stock = request.form.get('stock', None)
     cash = request.form.get('cash', None)
 
-    return accountbook.update(db, id, date, netAsset, loan, realty, stock, cash)
+    return asset.update(db, id, date, netAsset, loan, realty, stock, cash)
+
+
+@app.route('/api/target')
+def getTarget():
+    return target.get(db)
+
+
+@app.route('/api/target', methods=['POST'])
+def insertTarget():
+    annualAsset = request.form.get('annualAsset', None)
+    monthlyIncome = request.form.get('monthlyIncome', None)
+    monthlyConsumption = request.form.get('monthlyConsumption', None)
+
+    return target.insert(db, annualAsset, monthlyIncome, monthlyConsumption)
+
+
+@app.route('/api/target/<int:id>', methods=['DELETE'])
+def deleteTarget(id):
+    return target.delete(db, id)
+
+
+@app.route('/api/target/<int:id>', methods=['PUT'])
+def updateTarget(id):
+    annualAsset = request.form.get('annualAsset', None)
+    monthlyIncome = request.form.get('monthlyIncome', None)
+    monthlyConsumption = request.form.get('monthlyConsumption', None)
+
+    return target.update(db, id, annualAsset, monthlyIncome, monthlyConsumption)

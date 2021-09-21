@@ -5,13 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 
-import { IAmountInfo } from './Interface';
-
-interface Props {
-  amountInfo: IAmountInfo;
-}
-
-const AmountChart: React.FC<Props> = ({ amountInfo }: Props) => {
+const AmountChart: React.FC = () => {
   //   const classes = useStyles();
 
   const data = {
@@ -58,7 +52,7 @@ const AmountChart: React.FC<Props> = ({ amountInfo }: Props) => {
   const options = {
     plugins: {
       legend: {
-        align: 'end',
+        // align: 'end',
         title: {
           color: '#fff',
         },

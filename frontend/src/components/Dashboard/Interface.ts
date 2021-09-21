@@ -1,6 +1,14 @@
-export interface IAmountInfo {
-  annualTargetAmount: number;
-  monthlyTargetAmount: number;
-  currentNetAssets: number;
-  averageMonthlyIncome: number;
+export interface IAssetInfo {
+  date: string;
+  netAsset: number;
+  loan: number;
+  realty: number;
+  stock: number;
+  cash: number;
+}
+
+export interface ITargetInfo {
+  annualAsset: number;
+  monthlyIncome: number;
+  monthlyConsumption: number;
 }

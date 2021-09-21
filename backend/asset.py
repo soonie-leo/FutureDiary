@@ -4,17 +4,16 @@ from db import Asset
 
 
 def get(db):
-    data = []
-    for row in db.session.query(Asset).all():
-        data.append({
-            'id': row.id,
-            'date': row.date,
-            'netAsset': row.netAsset,
-            'loan': row.loan,
-            'realty': row.realty,
-            'stock': row.stock,
-            'cash': row.cash
-        })
+    row = db.session.query(Asset).order_by(Asset.date.desc()).first()
+    data = {
+        'id': row.id,
+        'date': row.date,
+        'netAsset': row.netAsset,
+        'loan': row.loan,
+        'realty': row.realty,
+        'stock': row.stock,
+        'cash': row.cash
+    }
 
     return {
         'success': True,
@@ -76,6 +75,7 @@ def delete(db, id):
         'success': True,
         'message': 'OK'
     }
+    
 
 def update(db, id, date, netAsset, loan, realty, stock, cash):
     try:

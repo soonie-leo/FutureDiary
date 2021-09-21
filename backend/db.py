@@ -42,3 +42,17 @@ class Asset(db.Model):
         self.realty = realty
         self.stock = stock
         self.cash = cash
+
+
+class Target(db.Model):
+    __tablename__ = 'Target'
+
+    id = db.Column(db.Integer, primary_key=True)
+    annualAsset = db.Column(db.Integer, nullable=False)
+    monthlyIncome = db.Column(db.Integer, nullable=False)
+    monthlyConsumption = db.Column(db.Integer, nullable=False)
+
+    def __init__(self, annualAsset, monthlyIncome, monthlyConsumption):
+        self.annualAsset = annualAsset
+        self.monthlyIncome = monthlyIncome
+        self.monthlyConsumption = monthlyConsumption

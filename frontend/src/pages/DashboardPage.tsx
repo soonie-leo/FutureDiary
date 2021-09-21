@@ -6,9 +6,10 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Divider from '@material-ui/core/Divider';
 import axios from 'axios';
 
-import { IAmountInfo } from '../components/Dashboard/Interface';
-import AmountInfo from '../components/Dashboard/AmountInfo';
-import AmountChart from '../components/Dashboard/AmountChart';
+import { IAssetInfo, ITargetInfo } from '../components/Dashboard/Interface';
+import DashboardInfo from '../components/Dashboard/DashboardInfo';
+import DashboardChart from '../components/Dashboard/DashboardChart';
+import BaseSettingDialog from '../components/Dashboard/BaseSettingDialog';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -23,24 +24,40 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-const defaultAmountInfo = {
-  annualTargetAmount: 25600000,
-  monthlyTargetAmount: 2400000,
-  currentNetAssets: 35100000,
-  averageMonthlyIncome: 3900000,
+const defaultAssetInfo = {
+  date: '',
+  netAsset: 0,
+  loan: 0,
+  realty: 0,
+  stock: 0,
+  cash: 0,
+};
+
+const defaultTargetInfo = {
+  annualAsset: 0,
+  monthlyIncome: 0,
+  monthlyConsumption: 0,
 };
 
 const DashboardPage: React.FC = () => {
   const classes = useStyles();
-  const [amountInfo, setAmountInfo] = React.useState<IAmountInfo>(defaultAmountInfo);
+  const [assetInfo, setAssetInfo] = React.useState<IAssetInfo>(defaultAssetInfo);
+  const [targetInfo, setTargetInfo] = React.useState<ITargetInfo>(defaultTargetInfo);
+  const [baseSettingVisible, setBaseSettingVisible] = React.useState(false);
   const [progressOpen, setProgressOpen] = React.useState(false);
 
   React.useEffect(() => {
     const getTargetAmount = async () => {
       setProgressOpen(true);
-      const response = await axios.get('/api/amount');
-      console.log(response.data);
-      setAmountInfo(response.data);
+      const responseA = await axios.get('/api/asset');
+      const responseB = await axios.get('/api/target');
+      if (responseA.data.success && responseB.data.success) {
+        console.log(responseA.data);
+        setAssetInfo(responseA.data.data);
+        setTargetInfo(responseB.data.data);
+      } else {
+        setBaseSettingVisible(true);
+      }
       setProgressOpen(false);
     };
     getTargetAmount();
@@ -48,12 +65,13 @@ const DashboardPage: React.FC = () => {
 
   return (
     <>
-      <AmountInfo amountInfo={amountInfo} />
+      <DashboardInfo assetInfo={assetInfo} targetInfo={targetInfo} />
       <Divider classes={{ root: classes.divider }} />
-      <AmountChart amountInfo={amountInfo} />
+      <DashboardChart />
       <Backdrop className={classes.backdrop} open={progressOpen}>
         <CircularProgress color="inherit" />
       </Backdrop>
+      <BaseSettingDialog visible={baseSettingVisible} isMobile={false} />
     </>
   );
 };
