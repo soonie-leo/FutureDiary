@@ -9,3 +9,7 @@ export const htmlDecode = (input: string): string => {
   const output = e.childNodes.length === 0 ? '' : e.childNodes[0].nodeValue;
   return typeof output === 'string' ? output : '';
 };
+
+export const convertDate2Str = (date: Date): string => {
+  return date.toISOString().split('.')[0].replace('T', '. ').replace(/-/g, '.');
+};

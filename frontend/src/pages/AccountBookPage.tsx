@@ -6,7 +6,6 @@ import {
   GridColDef,
   GridCellParams,
   GridSortDirection,
-  GridSelectionModel,
   GridRowParams,
   GridToolbarContainer,
   MuiEvent,
@@ -24,9 +23,13 @@ import EditIcon from '@material-ui/icons/Edit';
 import CancelIcon from '@material-ui/icons/Close';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
+import Backdrop from '@material-ui/core/Backdrop';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import { Alert, AlertTitle } from '@material-ui/lab';
+import axios from 'axios';
 
 import { IRow } from '../components/AccountBook/Interface';
-import { getNumberWithComma } from '../components/common/utils';
+import { convertDate2Str, getNumberWithComma } from '../components/common/utils';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -60,62 +63,15 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-const sampleData = [
-  {
-    id: 1,
-    date: new Date('2021.09.11 14:32:12'),
-    content: '점심',
-    income: 0,
-    expense: 8000,
-    category: '식사',
-    memo: '순대국',
-  },
-  {
-    id: 2,
-    date: new Date('2021.09.11 19:35:11'),
-    content: '저녁',
-    income: 0,
-    expense: 12000,
-    category: '식사',
-    memo: '돈까스 세트',
-  },
-  {
-    id: 3,
-    date: new Date('2021.09.12 09:59:55'),
-    content: '프로젝터 판매',
-    income: 350000,
-    expense: 0,
-    category: '중고',
-    memo: '당근마켓',
-  },
-  {
-    id: 4,
-    date: new Date('2021.09.12 12:02:03'),
-    content: '점심',
-    income: 0,
-    expense: 4500,
-    category: '식사',
-    memo: '우동 곱빼기',
-  },
-  {
-    id: 5,
-    date: new Date('2021.09.13 18:22:30'),
-    content: '캠핑장 예약',
-    income: 0,
-    expense: 80000,
-    category: '캠핑',
-    memo: '2박 3일',
-  },
-];
-
 const AccountBookPage: React.FC = () => {
   const classes = useStyles();
   const apiRef = useGridApiRef();
 
   const [rows, setRows] = React.useState<Array<IRow>>([]);
-  const [selectRows, setSelectRows] = React.useState<Array<IRow>>([]);
-  const [selectionModel, setSelectionModel] = React.useState<GridSelectionModel>([]);
-  const [lastId, setLastId] = React.useState(5);
+  const [lastId, setLastId] = React.useState(0);
+  const [activeAddBtn, setActiveAddBtn] = React.useState(true);
+  const [errorMessage, setErrorMessage] = React.useState('');
+  const [progressOpen, setProgressOpen] = React.useState(false);
 
   interface RowMenuProps {
     api: GridApi;
@@ -133,12 +89,40 @@ const AccountBookPage: React.FC = () => {
 
     const handleSaveClick = (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
+      console.log(rows);
       api.commitRowChange(id);
-      api.setRowMode(id, 'view');
 
       const row = api.getRow(id);
-      api.updateRows([{ ...row, isNew: false }]);
-      // TODO: update 호출
+      if (row) {
+        console.log(row);
+
+        const insertAccountBook = async () => {
+          setProgressOpen(true);
+
+          const data = new FormData();
+          data.append('date', convertDate2Str(row.date));
+          data.append('content', row.content);
+          data.append('income', row.income);
+          data.append('expense', row.expense);
+          data.append('category', row.category);
+          data.append('memo', row.memo);
+
+          const response = await axios.post('/api/accountbook', data);
+          console.log(response.data);
+          if (!response.data.success) {
+            setErrorMessage(response.data.message.replace('Error: ', ''));
+          } else {
+            setActiveAddBtn(true);
+            setErrorMessage('');
+
+            api.setRowMode(id, 'view');
+            api.updateRows([{ ...row, isNew: false }]);
+          }
+
+          setProgressOpen(false);
+        };
+        insertAccountBook();
+      }
     };
 
     const handleDeleteClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -155,6 +139,9 @@ const AccountBookPage: React.FC = () => {
       if (row?.isNew) {
         api.updateRows([{ id, _action: 'delete' }]);
       }
+
+      setActiveAddBtn(true);
+      setErrorMessage('');
     };
 
     if (isInEditMode) {
@@ -183,10 +170,27 @@ const AccountBookPage: React.FC = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: 'date', headerName: 'Date', width: 200, type: 'dateTime', editable: true },
+    {
+      field: 'id',
+      headerName: 'ID',
+      width: 60,
+      align: 'right',
+      sortable: false,
+      disableColumnMenu: true,
+    },
+    {
+      field: 'date',
+      headerName: '날짜',
+      width: 200,
+      valueFormatter: (params) => {
+        return convertDate2Str(new Date(params.value as Date));
+      },
+      type: 'dateTime',
+      editable: true,
+    },
     {
       field: 'content',
-      headerName: 'Name',
+      headerName: '내용',
       width: 200,
       editable: true,
     },
@@ -243,22 +247,32 @@ const AccountBookPage: React.FC = () => {
       const newId = lastId + 1;
       setLastId(newId);
 
-      apiRef.current.updateRows([{ id: newId, date: new Date(), isNew: true }]);
+      const defaultRow = {
+        id: newId,
+        date: new Date(),
+        content: '',
+        income: 0,
+        expense: 0,
+        category: '',
+        memo: '',
+      };
+
+      apiRef.current.updateRows([{ ...defaultRow, isNew: true }]);
       apiRef.current.setRowMode(newId, 'edit');
       apiRef.current.setCellFocus(newId, 'content');
-      // TODO: post 호출
+      setActiveAddBtn(false);
     };
 
     return (
       <GridToolbarContainer className={classes.toolbarContainer}>
-        <Button className={classes.toolbarAddBtn} startIcon={<AddIcon />} onClick={handleAddClick}>
+        <Button
+          className={classes.toolbarAddBtn}
+          startIcon={<AddIcon />}
+          onClick={handleAddClick}
+          disabled={activeAddBtn ? false : true}
+        >
           Add Row
         </Button>
-        {selectRows.length > 0 && ( // TODO: 삭제 기능 추가
-          <Button className={classes.toolbarDeleteBtn} startIcon={<DeleteIcon />}>
-            Delete
-          </Button>
-        )}
       </GridToolbarContainer>
     );
   };
@@ -272,42 +286,55 @@ const AccountBookPage: React.FC = () => {
   };
 
   React.useEffect(() => {
-    setRows(sampleData);
+    const getAccountBook = async () => {
+      setProgressOpen(true);
+      const response = await axios.get('/api/accountbook');
+      setRows(response.data.data);
+      setProgressOpen(false);
+    };
+    getAccountBook();
   }, []);
 
+  React.useEffect(() => {
+    setLastId(rows.length);
+  }, [rows]);
+
   return (
-    <Box height={1000} width="100%">
-      <Box height="100%" display="flex">
-        <Box flexGrow={1}>
-          <DataGridPro
-            rows={rows}
-            columns={columns}
-            apiRef={apiRef}
-            sortModel={[{ field: 'date', sort: 'desc' as GridSortDirection }]}
-            checkboxSelection
-            disableSelectionOnClick
-            selectionModel={selectionModel}
-            onSelectionModelChange={(newSelectionModel) => {
-              setSelectionModel(newSelectionModel);
-              const target = [];
-              for (const row of rows) {
-                if (newSelectionModel.includes(row.id)) target.push(row);
-              }
-              setSelectRows(target);
-            }}
-            editMode="row"
-            onRowEditStart={handleRowEditStart}
-            onRowEditStop={handleRowEditStop}
-            components={{
-              Toolbar: CustomToolbar,
-            }}
-            componentsProps={{
-              toolbar: { apiRef },
-            }}
-          />
+    <>
+      {errorMessage.length > 0 && (
+        <Box mb={2}>
+          <Alert severity="error">
+            <AlertTitle>Error</AlertTitle>
+            {errorMessage}
+          </Alert>
+        </Box>
+      )}
+      <Box height={1000} width="100%">
+        <Box height="100%" display="flex">
+          <Box flexGrow={1}>
+            <DataGridPro
+              rows={rows}
+              columns={columns}
+              apiRef={apiRef}
+              sortModel={[{ field: 'date', sort: 'desc' as GridSortDirection }]}
+              editMode="row"
+              disableSelectionOnClick
+              onRowEditStart={handleRowEditStart}
+              onRowEditStop={handleRowEditStop}
+              components={{
+                Toolbar: CustomToolbar,
+              }}
+              componentsProps={{
+                toolbar: { apiRef },
+              }}
+            />
+          </Box>
         </Box>
       </Box>
-    </Box>
+      <Backdrop className={classes.backdrop} open={progressOpen}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+    </>
   );
 };
 

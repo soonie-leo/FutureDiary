@@ -5,7 +5,8 @@ from db import Asset
 
 def get(db):
     row = db.session.query(Asset).order_by(Asset.date.desc()).first()
-    data = {
+    if row:
+        data = {
         'id': row.id,
         'date': row.date,
         'netAsset': row.netAsset,
@@ -15,10 +16,15 @@ def get(db):
         'cash': row.cash
     }
 
-    return {
-        'success': True,
-        'data': data
-    }
+        return {
+            'success': True,
+            'data': data
+        }
+    else:
+        return {
+            'success': False,
+            'data': {}
+        }
 
 
 def insert(db, date, netAsset, loan, realty, stock, cash):

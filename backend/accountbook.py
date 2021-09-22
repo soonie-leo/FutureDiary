@@ -43,6 +43,13 @@ def insert(db, date, content, income, expense, category, memo):
             'message': f"Error: {','.join(missingParams)} 파라미터가 포함되어야 합니다."
         }
 
+    print(date)
+    print(content)
+    print(income)
+    print(expense)
+    print(category)
+    print(memo)
+
     if content == '':
         return {
             'success': False,
