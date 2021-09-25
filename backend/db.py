@@ -7,7 +7,7 @@ class AccountBook(db.Model):
     __tablename__ = 'AccountBook'
 
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime(timezone=True), nullable=False)
     content = db.Column(db.String(80), nullable=False)
     income = db.Column(db.Integer, nullable=False)
     expense = db.Column(db.Integer, nullable=False)
@@ -23,12 +23,11 @@ class AccountBook(db.Model):
         self.memo = memo
 
 
-# 자동으로 계산되어 들어가는 값 (일 단위)
 class Asset(db.Model):
     __tablename__ = 'Asset'
 
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, nullable=False)
+    date = db.Column(db.DateTime(timezone=True), nullable=False)
     netAsset = db.Column(db.Integer, nullable=False)
     loan = db.Column(db.Integer, nullable=False)
     realty = db.Column(db.Integer, nullable=False)

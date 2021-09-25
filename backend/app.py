@@ -96,13 +96,7 @@ def updateAccountBook(id):
 @app.route('/api/asset')
 def getAssetLast():
     app.logger.info('GET /api/asset')
-    return asset.getLast(db)
-
-
-@app.route('/api/asset/all')
-def getAssetAll():
-    app.logger.info('GET /api/asset/all')
-    return asset.getAll(db)
+    return asset.get(db)
 
 
 @app.route('/api/asset', methods=['POST'])

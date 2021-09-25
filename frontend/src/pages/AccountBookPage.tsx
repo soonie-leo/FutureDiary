@@ -63,6 +63,14 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
+const convertData2Row = (data: Array<IRow>) => {
+  data.map((value) => {
+    value.date = new Date(value.date);
+    console.log(value);
+  });
+  return data;
+};
+
 const AccountBookPage: React.FC = () => {
   const classes = useStyles();
   const apiRef = useGridApiRef();
@@ -70,6 +78,8 @@ const AccountBookPage: React.FC = () => {
   const [rows, setRows] = React.useState<Array<IRow>>([]);
   const [lastId, setLastId] = React.useState(0);
   const [activeAddBtn, setActiveAddBtn] = React.useState(true);
+  const [activeAddMode, setActiveAddMode] = React.useState(false);
+  const [activeEditMode, setActiveEditMode] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState('');
   const [progressOpen, setProgressOpen] = React.useState(false);
 
@@ -84,12 +94,22 @@ const AccountBookPage: React.FC = () => {
 
     const handleEditClick = (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
+      if (activeAddMode) {
+        setErrorMessage('새로운 항목을 추가 중입니다. 완료하고 수정해주세요.');
+        return;
+      }
+      if (activeEditMode) {
+        setErrorMessage('수정 중인 항목이 있습니다. 완료하고 수정해주세요.');
+        return;
+      }
       api.setRowMode(id, 'edit');
+      setActiveAddBtn(false);
+      setActiveAddMode(false);
+      setActiveEditMode(true);
     };
 
     const handleSaveClick = (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
-      console.log(rows);
       api.commitRowChange(id);
 
       const row = api.getRow(id);
@@ -99,6 +119,7 @@ const AccountBookPage: React.FC = () => {
         const insertAccountBook = async () => {
           setProgressOpen(true);
 
+          console.log(convertDate2Str(row.date));
           const data = new FormData();
           data.append('date', convertDate2Str(row.date));
           data.append('content', row.content);
@@ -107,7 +128,15 @@ const AccountBookPage: React.FC = () => {
           data.append('category', row.category);
           data.append('memo', row.memo);
 
-          const response = await axios.post('/api/accountbook', data);
+          let response = {
+            data: {
+              success: false,
+              message: 'Error: 요청이 잘못되었습니다.',
+            },
+          };
+          if (activeAddMode) response = await axios.post('/api/accountbook', data);
+          else response = await axios.put(`/api/accountbook/${id}`, data);
+
           console.log(response.data);
           if (!response.data.success) {
             setErrorMessage(response.data.message.replace('Error: ', ''));
@@ -117,6 +146,9 @@ const AccountBookPage: React.FC = () => {
 
             api.setRowMode(id, 'view');
             api.updateRows([{ ...row, isNew: false }]);
+
+            setActiveAddMode(false);
+            setActiveEditMode(false);
           }
 
           setProgressOpen(false);
@@ -127,8 +159,23 @@ const AccountBookPage: React.FC = () => {
 
     const handleDeleteClick = (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
-      api.updateRows([{ id, _action: 'delete' }]);
-      // TODO: delete 호출
+
+      const deleteAccountBook = async () => {
+        setProgressOpen(true);
+
+        const response = await axios.delete(`/api/accountbook/${id}`);
+
+        console.log(response.data);
+        if (!response.data.success) {
+          setErrorMessage(response.data.message.replace('Error: ', ''));
+        } else {
+          setErrorMessage('');
+          api.updateRows([{ id, _action: 'delete' }]);
+        }
+
+        setProgressOpen(false);
+      };
+      deleteAccountBook();
     };
 
     const handleCancelClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -141,6 +188,8 @@ const AccountBookPage: React.FC = () => {
       }
 
       setActiveAddBtn(true);
+      setActiveAddMode(false);
+      setActiveEditMode(false);
       setErrorMessage('');
     };
 
@@ -261,6 +310,8 @@ const AccountBookPage: React.FC = () => {
       apiRef.current.setRowMode(newId, 'edit');
       apiRef.current.setCellFocus(newId, 'content');
       setActiveAddBtn(false);
+      setActiveAddMode(true);
+      setActiveEditMode(false);
     };
 
     return (
@@ -289,14 +340,17 @@ const AccountBookPage: React.FC = () => {
     const getAccountBook = async () => {
       setProgressOpen(true);
       const response = await axios.get('/api/accountbook');
-      setRows(response.data.data);
+      setRows(convertData2Row(response.data.data));
       setProgressOpen(false);
     };
     getAccountBook();
   }, []);
 
   React.useEffect(() => {
-    setLastId(rows.length);
+    if (rows.length > 0) {
+      const lastId = Object.entries(rows).reduce((a, b) => (a[1].id > b[1].id ? a : b))[1].id;
+      setLastId(lastId);
+    }
   }, [rows]);
 
   return (

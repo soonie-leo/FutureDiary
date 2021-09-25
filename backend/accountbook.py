@@ -8,7 +8,7 @@ def get(db):
     for row in db.session.query(AccountBook).all():
         data.append({
             'id': row.id,
-            'date': row.date,
+            'date': row.date.strftime('%Y. %m. %d. %H:%M:%S'),
             'content': row.content,
             'income': row.income,
             'expense': row.expense,
@@ -43,13 +43,6 @@ def insert(db, date, content, income, expense, category, memo):
             'message': f"Error: {','.join(missingParams)} 파라미터가 포함되어야 합니다."
         }
 
-    print(date)
-    print(content)
-    print(income)
-    print(expense)
-    print(category)
-    print(memo)
-
     if content == '':
         return {
             'success': False,
@@ -63,22 +56,7 @@ def insert(db, date, content, income, expense, category, memo):
         }
 
     try:
-        ymdDate = date.split(' ')[0]
-        date = datetime.strptime(date, '%Y.%m.%d. %H:%M:%S')
-
-        targetDate = datetime.strptime(ymdDate, '%Y.%m.%d.')
-        targetAsset = db.session.query(Asset).filter_by(date=targetDate).first()
-        if targetAsset:
-            targetAsset.netAsset += int(income)
-            targetAsset.cash += int(income)
-            targetAsset.netAsset -= int(expense)
-            targetAsset.cash -= int(expense)
-        else:
-            return {
-            'success': False,
-            'message': 'Error: 기본 자산이 등록되어있지 않습니다.'
-        }
-
+        date = datetime.strptime(date, '%Y. %m. %d. %H:%M:%S')
         accountBook = AccountBook(date, content, income, expense, category, memo)
         db.session.add(accountBook)
         db.session.commit()
@@ -98,21 +76,6 @@ def insert(db, date, content, income, expense, category, memo):
 def delete(db, id):
     try:
         targetAccountBook = db.session.query(AccountBook).filter_by(id=id).first()
-        ymdDate = datetime.strftime(targetAccountBook.date, '%Y.%m.%d.')
-
-        targetDate = datetime.strptime(ymdDate, '%Y.%m.%d.')
-        targetAsset = db.session.query(Asset).filter_by(date=targetDate).first()
-        if targetAsset:
-            targetAsset.netAsset -= int(targetAccountBook.income)
-            targetAsset.cash -= int(targetAccountBook.income)
-            targetAsset.netAsset += int(targetAccountBook.expense)
-            targetAsset.cash += int(targetAccountBook.expense)
-        else:
-            return {
-            'success': False,
-            'message': 'Error: 기본 자산이 등록되어있지 않습니다.'
-        }
-
         db.session.delete(targetAccountBook)
         db.session.commit()
     except Exception as e:
@@ -131,6 +94,7 @@ def update(db, id, date, content, income, expense, category, memo):
     try:
         target = db.session.query(AccountBook).filter_by(id=id).first()
         if date:
+            date = datetime.strptime(date, '%Y. %m. %d. %H:%M:%S')
             target.date = date
         if content:
             target.content = content

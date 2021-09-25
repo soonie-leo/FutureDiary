@@ -11,5 +11,14 @@ export const htmlDecode = (input: string): string => {
 };
 
 export const convertDate2Str = (date: Date): string => {
-  return date.toISOString().split('.')[0].replace('T', '. ').replace(/-/g, '.');
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  };
+  return date.toLocaleString('ko-KR', options);
 };
